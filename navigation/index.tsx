@@ -1,8 +1,3 @@
-/**
- * If you are not familiar with React Navigation, refer to the "Fundamentals" guide:
- * https://reactnavigation.org/docs/getting-started
- *
- */
 import { FontAwesome } from '@expo/vector-icons'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import {
@@ -12,7 +7,7 @@ import {
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as React from 'react'
-import { ColorSchemeName, Pressable } from 'react-native'
+import { ColorSchemeName } from 'react-native'
 
 import Colors from '../constants/Colors'
 import useColorScheme from '../hooks/useColorScheme'
@@ -20,22 +15,25 @@ import ModalScreen from '../screens/ModalScreen'
 import NotFoundScreen from '../screens/NotFoundScreen'
 import ChatScreens from '../screens/ChatScreens'
 import TabTwoScreen from '../screens/TabTwoScreen'
-import {
-  RootStackParamList,
-  RootTabParamList,
-  RootTabScreenProps
-} from '../types'
+import { RootStackParamList, RootTabParamList } from '../types'
 import LinkingConfiguration from './LinkingConfiguration'
+import { EventRegister } from 'react-native-event-listeners'
+import { EVENT } from '../constants'
 
 export default function Navigation({
   colorScheme
 }: {
   colorScheme: ColorSchemeName
 }) {
+  const onStateChange = async () => {
+    EventRegister.emit(EVENT.CLOSE)
+  }
+
   return (
     <NavigationContainer
       linking={LinkingConfiguration}
       theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
+      onStateChange={onStateChange}
     >
       <RootNavigator />
     </NavigationContainer>
@@ -88,7 +86,10 @@ function BottomTabNavigator() {
         name="TabOne"
         component={ChatScreens}
         options={{
-          headerShown: false
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="mail-reply" color={color} />
+          )
         }}
       />
       <BottomTab.Screen

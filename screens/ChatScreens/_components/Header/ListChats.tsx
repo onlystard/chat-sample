@@ -1,30 +1,25 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View, Image } from 'react-native'
 import React, { memo } from 'react'
 import { Feather as Icon } from '@expo/vector-icons'
 import useColorScheme from '../../../../hooks/useColorScheme'
 import Colors from '../../../../constants/Colors'
 
 interface ListChatsProps {
-  track: any
-  artist: string
-  index: number
+  item: any
 }
 
 const ListChats = (props: ListChatsProps) => {
-  const { track, artist, index } = props
+  const { item } = props
   const colorScheme = useColorScheme()
 
   return (
     <View
       style={[styles.row, { backgroundColor: Colors[colorScheme].background }]}
     >
-      <View style={styles.cell}>
-        <Text style={{ color: Colors[colorScheme].text }}>{index}</Text>
-      </View>
+      <Image style={styles.avatar} source={{ uri: item?.avatar }} />
       <View style={[styles.cell, { flex: 1 }]}>
-        <Text style={{ color: Colors[colorScheme].text }}>{track.name}</Text>
         <Text style={{ color: Colors[colorScheme].text }}>
-          {track.artist || artist}
+          {item?.fullName}
         </Text>
       </View>
       <View style={styles.cell}>
@@ -38,10 +33,17 @@ export default memo(ListChats)
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row'
+    flexDirection: 'row',
+    padding: 10
   },
   cell: {
     padding: 16,
     justifyContent: 'center'
+  },
+  avatar: {
+    height: 54,
+    width: 54,
+    resizeMode: 'contain',
+    borderRadius: 54 / 2
   }
 })

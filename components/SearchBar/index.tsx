@@ -21,13 +21,14 @@ interface IProps {
   setClicked(clicked: boolean): void
   searchPhrase: string
   setSearchPhrase(searchPhrase: string): void
+  styleBackground: any
 }
 
 const SearchBar = (props: IProps) => {
   const inputRef = useRef<any>()
 
   return (
-    <View style={styles.background}>
+    <View style={[styles.background, props?.styleBackground]}>
       <View style={styles.containerSearch}>
         <View style={styles.searchBar}>
           <View style={styles.searchIconContainer}>
@@ -48,7 +49,7 @@ const SearchBar = (props: IProps) => {
                 borderTopRightRadius: 0
               })
             ]}
-            placeholder={t('common.search')}
+            placeholder={'Search for chat & messages'}
             value={props.searchPhrase}
             onChangeText={props.setSearchPhrase}
             onFocus={() => {
@@ -100,7 +101,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: Size.screenWidth - Size.width40
   },
-
   searchBar: {
     ...Platform.select({
       android: {
@@ -150,7 +150,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 2.62,
-
     elevation: 3
   },
   searchIconContainer: {

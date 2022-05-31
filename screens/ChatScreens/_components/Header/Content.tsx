@@ -1,6 +1,12 @@
-import { StyleSheet, View } from 'react-native'
-import React, { memo } from 'react'
-import { MAX_HEADER_HEIGHT } from '../../../../constants'
+import { FlatList, StyleSheet, View } from 'react-native'
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
+import {
+  HEADER_DELTA,
+  LAYOUT_ANIMATION_TYPE,
+  MAX_HEADER_HEIGHT,
+  MIN_HEADER_HEIGHT,
+  NOOP
+} from '../../../../constants'
 import Animated, { Extrapolate, interpolateNode } from 'react-native-reanimated'
 import { onScrollEvent } from 'react-native-redash/lib/module/v1'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -9,6 +15,9 @@ import useColorScheme from '../../../../hooks/useColorScheme'
 import Colors from '../../../../constants/Colors'
 import { Feather as Icon } from '@expo/vector-icons'
 import { Ionicons as IconIonic } from '@expo/vector-icons'
+import SearchBar from '../../../../components/SearchBar'
+import { formatLiteral, setLayoutAnimation, trimText } from '../../../../Utils'
+import { useMergingState } from '../../../../hooks'
 
 interface ContentProps {
   listChats: any
@@ -18,6 +27,37 @@ interface ContentProps {
 const Content = (props: ContentProps) => {
   const { listChats, y } = props
   const colorScheme = useColorScheme()
+  const [clicked, setClicked] = useState(false)
+  const [state, setState] = useMergingState({
+    values: '',
+    activeSearch: false
+  })
+
+  const trimTimerRef = useRef<any>()
+
+  const onChangeText = useCallback((text: any) => {
+    setState({ values: text })
+
+    clearTimeout(trimTimerRef.current)
+    trimTimerRef.current = setTimeout(() => {
+      const keyword = trimText({ text, isTyping: true })
+
+      setState({ values: keyword })
+    }, 500)
+  }, [])
+
+  const dataListShow = useMemo(
+    () =>
+      listChats.filter((item) => {
+        return (
+          formatLiteral(item?.fullName.trim?.())
+            .toLowerCase()
+            .indexOf(formatLiteral(state?.values?.trim?.()).toLowerCase()) > -1
+        )
+      }),
+
+    [listChats, state?.values]
+  )
 
   const shadowAnimatedHeight = interpolateNode(y, {
     inputRange: [-MAX_HEADER_HEIGHT, 0],
@@ -29,6 +69,18 @@ const Content = (props: ContentProps) => {
     outputRange: [0, 1, 0],
     extrapolate: Extrapolate.CLAMP
   })
+
+  const _renderItem = ({ item }: any) => <ListChats {...{ item }} />
+
+  const onFocus = useCallback(() => {
+    setLayoutAnimation(LAYOUT_ANIMATION_TYPE.EASE_IN_EASE_OUT)
+    setState({ activeSearch: true })
+  }, [])
+  const onBlur = useCallback(() => {
+    setLayoutAnimation(LAYOUT_ANIMATION_TYPE.EASE_IN_EASE_OUT)
+    setState({ activeSearch: false })
+  }, [])
+
   return (
     <Animated.ScrollView
       onScroll={onScrollEvent({ y })}
@@ -37,13 +89,7 @@ const Content = (props: ContentProps) => {
       scrollEventThrottle={1}
     >
       <View style={styles.header}>
-        <View
-          style={{
-            padding: 35,
-            justifyContent: 'center',
-            alignItems: 'flex-end'
-          }}
-        >
+        <View style={styles.moreIcon}>
           <Icon
             name="more-vertical"
             color={Colors[colorScheme].text}
@@ -73,13 +119,7 @@ const Content = (props: ContentProps) => {
           >
             Chats
           </Animated.Text>
-          <View
-            style={{
-              padding: 35,
-              justifyContent: 'center',
-              alignItems: 'flex-end'
-            }}
-          >
+          <View style={styles.createIcon}>
             <IconIonic
               name="create-outline"
               color={Colors[colorScheme].text}
@@ -87,6 +127,21 @@ const Content = (props: ContentProps) => {
             />
           </View>
         </View>
+        <Animated.View
+          style={[state?.activeSearch ? styles.activeSearch : styles.searchBar]}
+        >
+          <SearchBar
+            styleBackground={{
+              backgroundColor: Colors[colorScheme].background
+            }}
+            searchPhrase={state?.values}
+            setSearchPhrase={onChangeText}
+            clicked={clicked}
+            setClicked={setClicked}
+            onBlur={onBlur}
+            onFocus={onFocus}
+          />
+        </Animated.View>
       </View>
       <View
         style={[
@@ -94,12 +149,11 @@ const Content = (props: ContentProps) => {
           { backgroundColor: Colors[colorScheme].background }
         ]}
       >
-        {listChats?.tracks?.map((track, key) => (
-          <ListChats
-            index={key + 1}
-            {...{ track, key, artist: listChats?.artist }}
-          />
-        ))}
+        <FlatList
+          data={dataListShow}
+          renderItem={_renderItem}
+          refreshing={NOOP}
+        />
       </View>
     </Animated.ScrollView>
   )
@@ -135,5 +189,28 @@ const styles = StyleSheet.create({
   },
   tracks: {
     paddingTop: 32
+  },
+  searchBar: {
+    flex: 1,
+    justifyContent: 'flex-end'
+  },
+  createIcon: {
+    padding: 35,
+    justifyContent: 'center',
+    alignItems: 'flex-end'
+  },
+  moreIcon: {
+    padding: 35,
+    justifyContent: 'center',
+    alignItems: 'flex-end'
+  },
+  activeSearch: {
+    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: MIN_HEADER_HEIGHT,
+    alignItems: 'center'
   }
 })
